@@ -32,13 +32,15 @@ class Matrix:
         for relative_x in RELATIVE_POSITIONS:
             relative_row = x + relative_x
             if relative_row < 0 or relative_row >= self.width:
+                # goes outside of horizontal border
                 continue
             for relative_y in RELATIVE_POSITIONS:
                 relative_col = y + relative_y
                 if relative_row == x and relative_col == y:
-                    # we don't want to count the actual cell
+                    # Don't count the actual cell
                     continue
                 if relative_col < 0 or relative_col >= self.height:
+                    # goes outside of vertical border
                     continue
                 neighbor_cells.append((relative_row, relative_col))
         return neighbor_cells
@@ -57,7 +59,6 @@ class Matrix:
         for x in range(len(self.rows)):
             row = self.rows[x]
             for y in range(len(row)):
-                # iterate on this decision
                 neighbors = self._get_neighbors(x, y)
                 active_neighbors_count = self._get_active_neighbors_count(neighbors)
                 is_cell_active = self.rows[x][y]
@@ -72,9 +73,10 @@ class Matrix:
                         new_grid[x][y] = False
 
                     # Any live cell with two or three live neighbors lives on to the next generation.
+                    # no operation necessary
                 else:
                     #Any dead cell with exactly three live neighbors becomes a live cell, as if by reproduction.
-                    if active_neighbors_count in [2, 3]:
+                    if active_neighbors_count == 3:
                         new_grid[x][y] = True
         self.rows = new_grid
 
@@ -106,12 +108,28 @@ class CLIMatrixRenderer(MatrixRenderer):
         output_obj.append(vertical_border)
 
 
+class CLIMatrixPrintRenderer(MatrixRenderer):
+    def generate_output(self, matrix, output_obj):
+        vertical_border = "--" + ("---" * (matrix.width))
+        print(vertical_border)
+
+        for row in matrix.rows:
+            row_str = "|"
+            for item in row:
+                row_str += ((" X " if item else "   "))
+            row_str += "|"
+            print(row_str)
+
+        # bottom border
+        print(vertical_border)
+
 class GOL:
-    def __init__(self, dimension_in=20, total_steps_in=0, starting_grid=None):
+    def __init__(self, dimension_in=20, total_steps_in=10, starting_grid=None):
         self.matrix = Matrix(width_in=dimension_in, height_in=dimension_in, starting_grid=starting_grid)
         self.total_steps = total_steps_in
 
-        renderer = CLIMatrixRenderer()  # eventually will change for rasp pi
+        renderer = CLIMatrixRenderer()  # eventually will make one for rasp pi
+        # renderer = CLIMatrixPrintRenderer()  # Use this for debugging
 
         with output(output_type="list", initial_len=dimension_in) as output_list:
             # Show starting setup
@@ -127,7 +145,8 @@ class GOL:
 
 def main():
     print("starting game")
-    start=[(4, 3), (5, 4), (6, 2), (6, 3), (6, 4)]
+    start=[(3, 2), (4, 3), (5, 1), (5, 2), (5, 3)]  # Crawler
+    # start = [(2, 3), (2, 4), (2, 5)]  # Blinker
     gol = GOL(starting_grid=start)
     print("Game Complete :)")
 
